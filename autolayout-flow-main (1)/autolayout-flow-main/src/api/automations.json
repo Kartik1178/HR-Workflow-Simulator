@@ -1,0 +1,50 @@
+[
+  {
+    "id": "send_email",
+    "label": "Send Email",
+    "params": ["to", "subject", "template"],
+    "description": "Send an automated email notification"
+  },
+  {
+    "id": "generate_doc",
+    "label": "Generate Document",
+    "params": ["template", "recipient", "format"],
+    "description": "Generate a document from a template"
+  },
+  {
+    "id": "create_account",
+    "label": "Create Account",
+    "params": ["username", "email", "role"],
+    "description": "Create a new user account in the system"
+  },
+  {
+    "id": "update_record",
+    "label": "Update Record",
+    "params": ["recordId", "field", "value"],
+    "description": "Update a database record"
+  },
+  {
+    "id": "send_slack",
+    "label": "Send Slack Message",
+    "params": ["channel", "message"],
+    "description": "Send a message to a Slack channel"
+  },
+  {
+    "id": "create_task",
+    "label": "Create Task",
+    "params": ["title", "assignee", "dueDate"],
+    "description": "Create a new task in the task management system"
+  },
+  {
+    "id": "webhook",
+    "label": "Call Webhook",
+    "params": ["url", "method", "payload"],
+    "description": "Make an HTTP request to an external webhook"
+  },
+  {
+    "id": "schedule_meeting",
+    "label": "Schedule Meeting",
+    "params": ["title", "attendees", "duration"],
+    "description": "Schedule a calendar meeting"
+  }
+]
