@@ -164,7 +164,14 @@ const DesignerCanvas = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, nodes, edges, selectedNodeId, selectedEdgeId, duplicateNode, copyNodes, pasteNodes, deleteNode, deleteEdge]);
-
+useEffect(() => {
+  if (selectedEdgeId) {
+    setIsEdgePanelOpen(true);
+    setIsNodePanelOpen(false);
+  } else {
+    setIsEdgePanelOpen(false);
+  }
+}, [selectedEdgeId]);
   // Handle node changes (position, selection)
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
