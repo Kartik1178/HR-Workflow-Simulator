@@ -4,6 +4,7 @@ import { Flag, AlertCircle, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EndNodeData } from '@/types/workflow';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
 
 const outcomeConfig = {
   success: {
@@ -29,8 +30,14 @@ const EndNode = memo(({ data, selected, id }: NodeProps<EndNodeData>) => {
   const outcomeStyle = data.outcome ? outcomeConfig[data.outcome] : null;
   const OutcomeIcon = outcomeStyle?.icon;
 
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
   return (
     <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(id);
+      }}
       className={cn(
         'workflow-node bg-node-end-bg border-node-end-border min-w-[180px]',
         selected && 'ring-2 ring-node-end ring-offset-2',

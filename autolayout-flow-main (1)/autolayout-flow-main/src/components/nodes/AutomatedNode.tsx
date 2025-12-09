@@ -4,13 +4,20 @@ import { Zap, AlertCircle, CheckCircle, RotateCcw, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AutomatedNodeData } from '@/types/workflow';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
 
 const AutomatedNode = memo(({ data, selected, id }: NodeProps<AutomatedNodeData>) => {
   const { getNodeStatus } = useValidation();
   const status = getNodeStatus(id);
 
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
   return (
     <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(id);
+      }}
       className={cn(
         'workflow-node bg-node-automated-bg border-node-automated-border min-w-[200px]',
         selected && 'ring-2 ring-node-automated ring-offset-2',

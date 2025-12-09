@@ -1,3 +1,4 @@
+// src/pages/Designer.tsx
 import { useCallback, useState, useRef, DragEvent, useEffect } from 'react';
 import ReactFlow, {
   Background,
@@ -164,14 +165,27 @@ const DesignerCanvas = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, nodes, edges, selectedNodeId, selectedEdgeId, duplicateNode, copyNodes, pasteNodes, deleteNode, deleteEdge]);
-useEffect(() => {
-  if (selectedEdgeId) {
-    setIsEdgePanelOpen(true);
-    setIsNodePanelOpen(false);
-  } else {
-    setIsEdgePanelOpen(false);
-  }
-}, [selectedEdgeId]);
+
+  // Sync UI with store-selected edge
+  useEffect(() => {
+    if (selectedEdgeId) {
+      setIsEdgePanelOpen(true);
+      setIsNodePanelOpen(false);
+    } else {
+      setIsEdgePanelOpen(false);
+    }
+  }, [selectedEdgeId]);
+
+  // Sync UI with store-selected node (open node panel when store selection changes)
+  useEffect(() => {
+    if (selectedNodeId) {
+      setIsNodePanelOpen(true);
+      setIsEdgePanelOpen(false);
+    } else {
+      setIsNodePanelOpen(false);
+    }
+  }, [selectedNodeId]);
+
   // Handle node changes (position, selection)
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -283,6 +297,7 @@ useEffect(() => {
   // Handle node click
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      console.debug('[Designer] onNodeClick fired for node', node.id);
       setSelectedNode(node.id);
       setSelectedEdge(null);
       setIsNodePanelOpen(true);
@@ -393,13 +408,21 @@ useEffect(() => {
           {/* Node Inspector Panel */}
           <NodeInspectorPanel
             isOpen={isNodePanelOpen && !!selectedNodeId}
-            onClose={() => setIsNodePanelOpen(false)}
+            onClose={() => {
+              setIsNodePanelOpen(false);
+              // clear global selection so store and UI stay in sync
+              setSelectedNode(null);
+            }}
           />
 
           {/* Edge Inspector Panel */}
           <EdgeInspectorPanel
             isOpen={isEdgePanelOpen && !!selectedEdgeId}
-            onClose={() => setIsEdgePanelOpen(false)}
+            onClose={() => {
+              setIsEdgePanelOpen(false);
+              // clear global selection so store and UI stay in sync
+              setSelectedEdge(null);
+            }}
           />
 
           {/* Analytics Panel */}

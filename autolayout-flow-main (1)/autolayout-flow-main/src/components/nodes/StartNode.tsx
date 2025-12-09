@@ -4,13 +4,20 @@ import { Play, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StartNodeData } from '@/types/workflow';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
 
 const StartNode = memo(({ data, selected, id }: NodeProps<StartNodeData>) => {
   const { getNodeStatus } = useValidation();
   const status = getNodeStatus(id);
 
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
   return (
     <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(id);
+      }}
       className={cn(
         'workflow-node bg-node-start-bg border-node-start-border min-w-[180px]',
         selected && 'ring-2 ring-node-start ring-offset-2',

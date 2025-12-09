@@ -4,6 +4,7 @@ import { ClipboardList, AlertCircle, CheckCircle, User, Clock } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { TaskNodeData } from '@/types/workflow';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
 
 const priorityColors = {
   low: 'bg-status-success/10 text-status-success',
@@ -15,8 +16,14 @@ const TaskNode = memo(({ data, selected, id }: NodeProps<TaskNodeData>) => {
   const { getNodeStatus } = useValidation();
   const status = getNodeStatus(id);
 
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
   return (
     <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(id);
+      }}
       className={cn(
         'workflow-node bg-node-task-bg border-node-task-border min-w-[200px]',
         selected && 'ring-2 ring-node-task ring-offset-2',

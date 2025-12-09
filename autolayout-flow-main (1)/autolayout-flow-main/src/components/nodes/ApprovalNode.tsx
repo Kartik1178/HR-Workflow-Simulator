@@ -4,6 +4,7 @@ import { UserCheck, AlertCircle, CheckCircle, Users, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { ApprovalNodeData } from '@/types/workflow';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
 
 const approvalTypeLabels = {
   any: 'Any approver',
@@ -15,8 +16,15 @@ const ApprovalNode = memo(({ data, selected, id }: NodeProps<ApprovalNodeData>) 
   const { getNodeStatus } = useValidation();
   const status = getNodeStatus(id);
 
+  // Ensure left-click selects the node in the global store as a fallback
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+
   return (
     <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedNode(id);
+      }}
       className={cn(
         'workflow-node bg-node-approval-bg border-node-approval-border min-w-[200px]',
         selected && 'ring-2 ring-node-approval ring-offset-2',
