@@ -1,4 +1,5 @@
-import { memo, useState, useEffect } from 'react';
+// src/components/panels/VersionPanel.tsx
+import { memo, useState, useEffect, useCallback } from 'react';
 import {
   X,
   History,
@@ -48,59 +49,126 @@ const VersionPanel = memo(({ isOpen, onClose }: VersionPanelProps) => {
   const [versionName, setVersionName] = useState('');
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [diff, setDiff] = useState<VersionDiff | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
 
-  // Load versions
-  useEffect(() => {
-    if (isOpen) {
-      setVersions(getWorkflowVersions());
+  // helper to reload versions from storage
+  const reloadVersions = useCallback(() => {
+    try {
+      const v = getWorkflowVersions();
+      setVersions(v);
+    } catch (err) {
+      console.error('[VersionPanel] reloadVersions failed', err);
+      setVersions([]);
     }
-  }, [isOpen]);
+  }, []);
 
-  // Calculate diff when version selected
+  // Load versions on open
   useEffect(() => {
-    if (selectedVersionId) {
-      const version = versions.find((v) => v.id === selectedVersionId);
-      if (version) {
-        const calculated = calculateVersionDiff(nodes, edges, version.nodes, version.edges);
-        setDiff(calculated);
+    if (isOpen) reloadVersions();
+  }, [isOpen, reloadVersions]);
+
+  // Keep in sync with other tabs via storage event
+  useEffect(() => {
+    const handler = (ev: StorageEvent) => {
+      if (ev.key && ev.key.startsWith('workflow-versions')) {
+        reloadVersions();
       }
-    } else {
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [reloadVersions]);
+
+  // Calculate diff when a version is selected
+  useEffect(() => {
+    if (!selectedVersionId) {
+      setDiff(null);
+      return;
+    }
+    const version = versions.find((v) => v.id === selectedVersionId);
+    if (!version) {
+      setDiff(null);
+      return;
+    }
+    try {
+      const calculated = calculateVersionDiff(nodes, edges, version.nodes, version.edges);
+      setDiff(calculated);
+    } catch (err) {
+      console.error('[VersionPanel] calculateVersionDiff failed', err);
       setDiff(null);
     }
   }, [selectedVersionId, nodes, edges, versions]);
 
   const handleSaveVersion = () => {
-    const name = versionName.trim() || undefined;
-    saveWorkflowVersion(nodes, edges, name);
-    setVersions(getWorkflowVersions());
-    setVersionName('');
-    toast({
-      title: 'Version saved',
-      description: `${name || 'New version'} has been saved.`,
-    });
+    try {
+      const name = versionName.trim() || undefined;
+      const saved = saveWorkflowVersion(nodes, edges, name);
+      reloadVersions();
+      setVersionName('');
+      toast({
+        title: 'Version saved',
+        description: `${saved.name || 'New version'} has been saved.`,
+      });
+    } catch (err) {
+      console.error('[VersionPanel] handleSaveVersion error', err);
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save version (see console).',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleRestoreVersion = (version: WorkflowVersion) => {
-    setNodes(version.nodes);
-    setEdges(version.edges);
-    runValidation();
-    toast({
-      title: 'Version restored',
-      description: `Restored to "${version.name}"`,
-    });
-    onClose();
+  const handleRestoreVersion = async (version: WorkflowVersion) => {
+    if (isApplying) return;
+    setIsApplying(true);
+    try {
+      console.debug('[VersionPanel] restoring version', version.id);
+      // apply nodes/edges to store
+      setNodes(version.nodes);
+      setEdges(version.edges);
+      // re-run validation (and any other effects)
+      runValidation();
+
+      // Make sure UI refreshes versions (no change to versions list but keep consistent)
+      reloadVersions();
+
+      toast({
+        title: 'Version restored',
+        description: `Restored to "${version.name}"`,
+      });
+
+      // Close panel after restore
+      onClose();
+    } catch (err) {
+      console.error('[VersionPanel] handleRestoreVersion error', err);
+      toast({
+        title: 'Restore failed',
+        description: 'Unable to restore version (see console).',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const handleDeleteVersion = (id: string) => {
-    deleteVersion(id);
-    setVersions(getWorkflowVersions());
-    if (selectedVersionId === id) {
-      setSelectedVersionId(null);
+    try {
+      console.debug('[VersionPanel] deleting version', id);
+      deleteVersion(id);
+      reloadVersions();
+      if (selectedVersionId === id) setSelectedVersionId(null);
+      toast({
+        title: 'Version deleted',
+        description: 'The version has been removed.',
+      });
+    } catch (err) {
+      console.error('[VersionPanel] handleDeleteVersion error', err);
+      toast({
+        title: 'Delete failed',
+        description: 'Unable to delete version (see console).',
+        variant: 'destructive',
+      });
     }
-    toast({
-      title: 'Version deleted',
-      description: 'The version has been removed.',
-    });
   };
 
   const formatDate = (timestamp: number) => {
@@ -194,9 +262,9 @@ const VersionPanel = memo(({ isOpen, onClose }: VersionPanelProps) => {
                     ? 'border-primary bg-primary/5'
                     : 'border-border bg-card hover:border-primary/50'
                 )}
-                onClick={() => setSelectedVersionId(
-                  selectedVersionId === version.id ? null : version.id
-                )}
+                onClick={() =>
+                  setSelectedVersionId((prev) => (prev === version.id ? null : version.id))
+                }
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -214,59 +282,49 @@ const VersionPanel = memo(({ isOpen, onClose }: VersionPanelProps) => {
                     </Badge>
                   </div>
                 </div>
+{/* ... inside versions.map(...) ... */}
+{selectedVersionId === version.id && (
+  <div className="mt-3 pt-3 border-t border-border flex gap-2 items-center">
+    <Button
+      size="sm"
+      className="flex-1"
+      onClick={() => {
+        console.debug('[Test] direct restore click', version.id);
+        try {
+          setNodes(version.nodes);
+          setEdges(version.edges);
+          runValidation();
+          reloadVersions();
+          toast({ title: 'Restored (test)', description: `Restored ${version.name}` });
+        } catch (err) {
+          console.error('[Test] direct restore failed', err);
+          toast({ title: 'Restore failed', description: String(err), variant: 'destructive' });
+        }
+      }}
+    >
+      Direct Restore
+    </Button>
 
-                {selectedVersionId === version.id && (
-                  <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" className="flex-1">
-                          <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                          Restore
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Restore Version?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will replace your current workflow with "{version.name}".
-                            Make sure to save your current work first.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleRestoreVersion(version)}>
-                            Restore
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        console.debug('[Test] direct delete click', version.id);
+        try {
+          deleteVersion(version.id);
+          reloadVersions();
+          toast({ title: 'Deleted (test)', description: `${version.name} removed.` });
+        } catch (err) {
+          console.error('[Test] direct delete failed', err);
+          toast({ title: 'Delete failed', description: String(err), variant: 'destructive' });
+        }
+      }}
+    >
+      Direct Delete
+    </Button>
+  </div>
+)}
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Version?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete "{version.name}". This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteVersion(version.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                )}
               </div>
             ))
           )}
