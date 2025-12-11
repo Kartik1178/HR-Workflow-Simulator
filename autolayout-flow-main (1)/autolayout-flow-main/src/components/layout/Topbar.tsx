@@ -1,5 +1,5 @@
 // src/components/layout/Topbar.tsx
-import { memo, useRef } from 'react';
+import { memo, useRef, useState } from 'react';
 import {
   LayoutGrid,
   LayoutList,
@@ -13,6 +13,7 @@ import {
   Upload,
   History,
   BarChart3,
+  PlusSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +31,20 @@ import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/state/workflowStore';
 import { useValidation } from '@/hooks/useValidation';
 import { toast } from '@/hooks/use-toast';
-import { parseWorkflowFile, exportWorkflow } from '@/utils/storage';
+import { parseWorkflowFile, exportWorkflow, saveWorkflowVersion } from '@/utils/storage';
+
+// ShadCN AlertDialog components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface TopbarProps {
   onAutoLayout: (direction: 'TB' | 'LR') => void;
@@ -39,20 +53,42 @@ interface TopbarProps {
 }
 
 const Topbar = memo(({ onAutoLayout, onOpenVersions, onOpenAnalytics }: TopbarProps) => {
-  const { nodes, edges, setNodes, setEdges, undo, redo, history, historyIndex, runValidation } = useWorkflowStore();
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    undo,
+    redo,
+    history,
+    historyIndex,
+    runValidation,
+    saveToHistory,
+  } = useWorkflowStore();
+
   const { errorCount, warningCount, isValid } = useValidation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isNewDialogSavingBlank, setIsNewDialogSavingBlank] = useState(false); // checkbox state (save blank)
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < history.length - 1;
 
   const handleSave = () => {
     const workflow = { nodes, edges };
-    localStorage.setItem('workflow-backup', JSON.stringify(workflow));
-    toast({
-      title: 'Workflow saved',
-      description: 'Your workflow has been saved to local storage.',
-    });
+    try {
+      localStorage.setItem('workflow-backup', JSON.stringify(workflow));
+      toast({
+        title: 'Workflow saved',
+        description: 'Your workflow has been saved to local storage.',
+      });
+    } catch (e) {
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save workflow to local storage.',
+        variant: 'destructive',
+      });
+      console.error('[Topbar] save failed', e);
+    }
   };
 
   const handleExport = () => {
@@ -95,6 +131,34 @@ const Topbar = memo(({ onAutoLayout, onOpenVersions, onOpenAnalytics }: TopbarPr
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const createNewWorkflow = async (saveBlankVersion: boolean) => {
+    // Save current to history so undo works
+    try {
+      saveToHistory();
+    } catch (e) {
+      console.debug('[Topbar] saveToHistory failed', e);
+    }
+
+    // Clear the canvas
+    setNodes([]);
+    setEdges([]);
+    runValidation();
+
+    // Optionally save the blank workflow as a version
+    if (saveBlankVersion) {
+      try {
+        saveWorkflowVersion([], [], 'Blank Workflow');
+      } catch (e) {
+        console.warn('[Topbar] save blank workflow version failed', e);
+      }
+    }
+
+    toast({
+      title: 'New workflow created',
+      description: 'Canvas has been reset to an empty workflow.',
+    });
   };
 
   return (
@@ -230,6 +294,58 @@ const Topbar = memo(({ onAutoLayout, onOpenVersions, onOpenAnalytics }: TopbarPr
           </TooltipTrigger>
           <TooltipContent>Export as JSON</TooltipContent>
         </Tooltip>
+
+        {/* New Workflow - custom dialog with "save blank" checkbox */}
+        <AlertDialog>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 flex items-center gap-2">
+                  <PlusSquare className="w-4 h-4 mr-0" />
+                  New
+                </Button>
+              </AlertDialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Create a new blank workflow</TooltipContent>
+          </Tooltip>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Create New Workflow?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove all existing nodes and edges. You can undo if your history contains
+                the previous state. Optionally save the blank workflow as a version.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="px-4">
+              <label className="inline-flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  checked={isNewDialogSavingBlank}
+                  onChange={(e) => setIsNewDialogSavingBlank(e.target.checked)}
+                  className="rounded border"
+                />
+                <span className="text-sm text-muted-foreground">Also save blank workflow as a version</span>
+              </label>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  // create new workflow and optionally save blank
+                  createNewWorkflow(isNewDialogSavingBlank);
+                  // reset checkbox for next time
+                  setIsNewDialogSavingBlank(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Create New
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Versions */}
         <Tooltip>
