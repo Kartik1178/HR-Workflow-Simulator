@@ -1,3 +1,4 @@
+// src/components/panels/SimulationPanel.tsx
 import { memo } from 'react';
 import {
   Play,
@@ -22,6 +23,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useValidation } from '@/hooks/useValidation';
+import { useWorkflowStore } from '@/state/workflowStore';
+import { toast } from '@/hooks/use-toast';
 
 interface SimulationPanelProps {
   isOpen: boolean;
@@ -35,18 +38,21 @@ const speedOptions = [
 
 const SimulationPanel = memo(({ isOpen }: SimulationPanelProps) => {
   const { simulation, start, pause, resume, reset, setSpeed, stepForward } = useSimulation();
-  const { isValid, errorCount } = useValidation();
+  const { isValid, errorCount, validationErrors } = useValidation();
+
+  // store actions to select nodes/edges (open inspector)
+  const setSelectedNode = useWorkflowStore((s) => s.setSelectedNode);
+  const setSelectedEdge = useWorkflowStore((s) => s.setSelectedEdge);
 
   if (!isOpen) return null;
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
+  const formatTime = (timestamp: number) =>
+    new Date(timestamp).toLocaleTimeString('en-US', {
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
     });
-  };
 
   const getStepIcon = (status: string) => {
     switch (status) {
@@ -61,9 +67,33 @@ const SimulationPanel = memo(({ isOpen }: SimulationPanelProps) => {
     }
   };
 
+  // Simplified click handler: only open node/edge in inspector.
+  // (No centering / fitView / highlight — per your request)
+  const handleValidationClick = (err: { nodeId?: string; edgeId?: string; message: string }) => {
+    if (err.nodeId) {
+      setSelectedNode(err.nodeId);
+      toast({
+        title: 'Validation issue selected',
+        description: err.message,
+      });
+    } else if (err.edgeId) {
+      setSelectedEdge(err.edgeId);
+      toast({
+        title: 'Validation issue (edge)',
+        description: err.message,
+      });
+    } else {
+      toast({
+        title: 'Validation issue',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[500px] bg-card border border-border rounded-xl shadow-xl z-20 animate-in">
-      {/* Header */}
+      {/* Header, controls & speed */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-primary/10">
@@ -103,11 +133,7 @@ const SimulationPanel = memo(({ isOpen }: SimulationPanelProps) => {
       {/* Controls */}
       <div className="flex items-center gap-2 p-4 border-b border-border">
         {!simulation.isRunning ? (
-          <Button
-            onClick={start}
-            disabled={!isValid}
-            className="flex-1"
-          >
+          <Button onClick={start} disabled={!isValid} className="flex-1">
             <Play className="w-4 h-4 mr-2" />
             Start Simulation
           </Button>
@@ -133,24 +159,49 @@ const SimulationPanel = memo(({ isOpen }: SimulationPanelProps) => {
           <StepForward className="w-4 h-4" />
         </Button>
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={reset}
-          title="Reset simulation"
-        >
+        <Button variant="outline" size="icon" onClick={reset} title="Reset simulation">
           <RotateCcw className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Validation warning */}
+      {/* Clickable Validation banner: wrap & scroll refined */}
       {!isValid && (
         <div className="px-4 py-3 bg-status-error/10 border-b border-status-error/20">
-          <div className="flex items-center gap-2 text-status-error">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              Fix {errorCount} validation error{errorCount !== 1 ? 's' : ''} to run simulation
-            </span>
+          <div className="flex items-start gap-2 text-status-error">
+            <AlertCircle className="w-4 h-4 mt-1" />
+            <div className="flex-1">
+              <div className="text-sm font-medium">
+                Fix {errorCount} validation error{errorCount !== 1 ? 's' : ''} to run simulation
+              </div>
+
+              {/* Error list:
+                  - allow vertical scrolling when many/long items
+                  - make message and node-id wrap (break-words / break-all for long ids)
+              */}
+              <div className="mt-2 space-y-1 max-h-44 overflow-auto pr-1">
+                {validationErrors.map((err, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleValidationClick(err)}
+                    className="w-full text-left text-sm p-3 rounded hover:bg-status-error/5 transition-colors flex items-start gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      {/* message: allow wrapping and preserve line breaks */}
+                      <div className="font-medium text-foreground break-words leading-snug">
+                        {err.message}
+                      </div>
+
+                      {/* node/edge id: allow breaking long ids */}
+                      <div className="text-muted-foreground text-[12px] mt-1 break-all">
+                        {err.nodeId ? `Node: ${err.nodeId}` : err.edgeId ? `Edge: ${err.edgeId}` : 'Global'}
+                      </div>
+                    </div>
+
+                    <div className="text-muted-foreground text-xs shrink-0">Open</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -177,17 +228,11 @@ const SimulationPanel = memo(({ isOpen }: SimulationPanelProps) => {
               >
                 {getStepIcon(step.status)}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {step.message}
-                  </p>
+                  <p className="text-sm font-medium text-foreground truncate">{step.message}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(step.timestamp)}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{formatTime(step.timestamp)}</span>
                     {step.duration && (
-                      <span className="text-xs text-muted-foreground">
-                        • {Math.round(step.duration)}ms
-                      </span>
+                      <span className="text-xs text-muted-foreground">• {Math.round(step.duration)}ms</span>
                     )}
                   </div>
                 </div>
