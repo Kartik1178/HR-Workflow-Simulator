@@ -1,3 +1,4 @@
+// src/components/layout/Topbar.tsx
 import { memo, useRef } from 'react';
 import {
   LayoutGrid,
@@ -244,11 +245,12 @@ const Topbar = memo(({ onAutoLayout, onOpenVersions, onOpenAnalytics }: TopbarPr
         {/* Analytics */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="sm" onClick={onOpenAnalytics} className="h-8">
-              <BarChart3 className="w-4 h-4" />
+            <Button variant="outline" size="sm" onClick={onOpenAnalytics} className="h-8 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 mr-0" />
+              Analytics
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Analytics & Insights</TooltipContent>
+          <TooltipContent>Show analytics</TooltipContent>
         </Tooltip>
 
         {/* Save */}
