@@ -2,316 +2,201 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
-@layer base {
-    :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
-    }
-
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
-    }
-}
-
-@layer base {
-    * {
-        @apply border-border;
-    }
-    body {
-        @apply bg-background text-foreground;
-    }
-}
-
-/* Custom radial gradient for depth effect */
-.bg-radial-gradient {
-    background: radial-gradient(
-        ellipse at center,
-        transparent 0%,
-        rgba(6, 15, 30, 0.6) 100%
-    );
-}
-
-@layer base {
-    [data-debug-wrapper="true"] {
-        display: contents !important;
-    }
-
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
-    }
+/* ================================================= */
+/* 🌊 GLASS SYSTEM                                   */
+/* ================================================= */
+.glass-panel {
+  background: rgba(6, 15, 30, 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(120, 220, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 25px 80px rgba(0,0,0,0.6);
 }
 
 /* ================================================= */
-/* 🦈 Shark cinematic animations (BACKGROUND ONLY)   */
+/* 🌊 DEPTH & LIGHT ABSORPTION                        */
 /* ================================================= */
+/* ================= REALISTIC DEPTH (NO FAKE BLUR) ================= */
 
-/* Horizontal cruising */
-@keyframes shark-swim {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(120vw);
-    }
-}
-
-@keyframes shark-swim-reverse {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-120vw);
-    }
-}
-
-/* Vertical body sway (realistic swimming) */
-@keyframes shark-float {
-    0%, 100% {
-        transform: translateY(0) rotate(0deg);
-    }
-    50% {
-        transform: translateY(12px) rotate(1deg);
-    }
-}
-
-@keyframes shark-float-slow {
-    0%, 100% {
-        transform: translateY(0) rotate(0deg);
-    }
-    50% {
-        transform: translateY(20px) rotate(-1deg);
-    }
-}
-
-/* Animation utility classes */
-.animate-shark-swim {
-    animation: shark-swim 45s linear infinite;
-}
-
-.animate-shark-swim-reverse {
-    animation: shark-swim-reverse 55s linear infinite;
-}
-
-.animate-shark-float {
-    animation: shark-float 6s ease-in-out infinite;
-}
-
-.animate-shark-float-slow {
-    animation: shark-float-slow 9s ease-in-out infinite;
-}
-/* ================================================= */
-/* 🦈 REALISTIC SHARK CINEMATIC ANIMATIONS            */
-/* ================================================= */
-
-/* Curved cruise paths (not straight lines) */
-@keyframes shark-cruise-right {
-    0%   { transform: translate(0, 0); }
-    40%  { transform: translate(45vw, -18px); }
-    70%  { transform: translate(90vw, 14px); }
-    100% { transform: translate(140vw, 0); }
-}
-
-@keyframes shark-cruise-left {
-    0%   { transform: translate(0, 0); }
-    40%  { transform: translate(-45vw, 20px); }
-    70%  { transform: translate(-90vw, -12px); }
-    100% { transform: translate(-140vw, 0); }
-}
-
-/* Different depth layers */
-.animate-shark-cruise-right {
-    animation: shark-cruise-right 85s linear infinite;
-}
-
-.animate-shark-cruise-left {
-    animation: shark-cruise-left 95s linear infinite;
-}
-
-/* Body swimming motion */
-@keyframes shark-body-light {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%      { transform: translateY(10px) rotate(0.8deg); }
-}
-
-@keyframes shark-body-medium {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%      { transform: translateY(16px) rotate(-0.6deg); }
-}
-
-@keyframes shark-body-heavy {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%      { transform: translateY(22px) rotate(0.5deg); }
-}
-
-.animate-shark-body-light {
-    animation: shark-body-light 6s ease-in-out infinite;
-}
-
-.animate-shark-body-medium {
-    animation: shark-body-medium 9s ease-in-out infinite;
-}
-
-.animate-shark-body-heavy {
-    animation: shark-body-heavy 12s ease-in-out infinite;
-}
-/* ================= DEPTH BLUR ================= */
+/* Far: silhouettes & distance */
 .depth-far {
-  filter: blur(2px);
-}
-.depth-mid {
-  filter: blur(0.6px);
-}
-.depth-near {
-  filter: blur(0);
+  opacity: 0.35;
+  filter: brightness(0.65) saturate(0.7);
 }
 
-/* ================= OCEAN FOG ================= */
+/* Mid: visible but softened */
+.depth-mid {
+  opacity: 0.6;
+  filter: brightness(0.85) saturate(0.85);
+}
+
+/* Near: sharp & present */
+.depth-near {
+  opacity: 1;
+  filter: none;
+}
+/* Subtle underwater haze */
+.water-haze {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(20, 60, 100, 0.08),
+    rgba(5, 10, 20, 0.25)
+  );
+  pointer-events: none;
+}
+
+
+/* ================================================= */
+/* 🌫️ OCEAN FOG (STACKED DEPTH)                      */
+/* ================================================= */
 .ocean-fog {
   position: fixed;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(5,15,30,0.2), rgba(0,0,0,0.7));
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 20, 40, 0.15),
+    rgba(0, 0, 0, 0.55)
+  );
   pointer-events: none;
-  z-index: -1;
 }
 
-/* ================= CAUSTIC LIGHT ================= */
+.ocean-fog-deep {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 0, 0, 0.8)
+  );
+  pointer-events: none;
+}
+
+/* ================================================= */
+/* 💡 CAUSTIC LIGHT                                  */
+/* ================================================= */
 .caustics {
   position: fixed;
   inset: 0;
   background: repeating-radial-gradient(
     circle at 50% 50%,
-    rgba(0,200,255,0.04),
-    transparent 60px
+    rgba(0,180,255,0.035),
+    transparent 80px
   );
-  opacity: 0.08;
-  animation: causticsMove 30s linear infinite;
+  opacity: 0.05;
+  animation: causticsMove 40s linear infinite;
   pointer-events: none;
 }
 
 @keyframes causticsMove {
   from { transform: translateY(0); }
-  to { transform: translateY(-200px); }
+  to { transform: translateY(-260px); }
 }
 
-/* ================= JELLYFISH ================= */
-@keyframes jelly-drift {
+/* ================================================= */
+/* 🦈 SHARKS (CINEMATIC, HEAVY MASS)                  */
+/* ================================================= */
+@keyframes shark-cruise-right {
+  0% { transform: translate(0,0); }
+  50% { transform: translate(70vw,12px); }
+  100% { transform: translate(140vw,0); }
+}
+
+@keyframes shark-cruise-left {
+  0% { transform: translate(0,0); }
+  50% { transform: translate(-70vw,-14px); }
+  100% { transform: translate(-140vw,0); }
+}
+
+.animate-shark-cruise-right {
+  animation: shark-cruise-right 90s linear infinite;
+}
+
+.animate-shark-cruise-left {
+  animation: shark-cruise-left 100s linear infinite;
+}
+
+@keyframes shark-body {
   0%,100% { transform: translateY(0); }
-  50% { transform: translateY(40px); }
+  50% { transform: translateY(18px); }
 }
-@keyframes jelly-drift-slow {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(65px); }
+
+.animate-shark-body-heavy {
+  animation: shark-body 14s ease-in-out infinite;
 }
-.animate-jelly-drift {
-  animation: jelly-drift 18s ease-in-out infinite;
+
+/* ================================================= */
+/* 🪼 JELLYFISH (NO POPPING, BUOYANCY ONLY)           */
+/* ================================================= */
+.jelly-dim {
+  filter: brightness(0.7) saturate(0.85);
 }
-.animate-jelly-drift-slow {
-  animation: jelly-drift-slow 28s ease-in-out infinite;
+
+@keyframes jelly-float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-24px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes jelly-float-slow {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-38px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-jelly-float {
+  animation: jelly-float 24s ease-in-out infinite;
+}
+
+.animate-jelly-float-slow {
+  animation: jelly-float-slow 36s ease-in-out infinite;
 }
 
 @keyframes jelly-pulse {
   0%,100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-.animate-jelly-pulse {
-  animation: jelly-pulse 5s ease-in-out infinite;
-}
-.animate-jelly-pulse-slow {
-  animation: jelly-pulse 8s ease-in-out infinite;
+  50% { transform: scale(1.05); }
 }
 
-/* ================= FISH ================= */
-@keyframes fish-right {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(120vw); }
+.animate-jelly-pulse {
+  animation: jelly-pulse 7s ease-in-out infinite;
 }
-@keyframes fish-left {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-120vw); }
+
+.animate-jelly-pulse-slow {
+  animation: jelly-pulse 10s ease-in-out infinite;
 }
-.animate-fish-school-right {
-  animation: fish-right 22s linear infinite;
+
+/* ================================================= */
+/* 🐠 FISH (CURVED, NATURAL SCHOOLING)               */
+/* ================================================= */
+@keyframes fish-curve-right {
+  0% { transform: translate(0,0); }
+  40% { transform: translate(40vw,-6px); }
+  70% { transform: translate(80vw,10px); }
+  100% { transform: translate(120vw,0); }
 }
-.animate-fish-school-left {
-  animation: fish-left 26s linear infinite;
+
+@keyframes fish-curve-left {
+  0% { transform: translate(0,0); }
+  40% { transform: translate(-40vw,8px); }
+  70% { transform: translate(-80vw,-10px); }
+  100% { transform: translate(-120vw,0); }
+}
+
+.animate-fish-curve-right {
+  animation: fish-curve-right 30s linear infinite;
+}
+
+.animate-fish-curve-left {
+  animation: fish-curve-left 34s linear infinite;
+}
+
+/* ================================================= */
+/* 💬 CHAT MESSAGE FLOAT                             */
+/* ================================================= */
+@keyframes floatMessage {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
